@@ -563,11 +563,20 @@ setupEventListeners() {
   document.getElementById('saveEditTodo').addEventListener('click', () => this.saveEditTodo());
 
   // Sign out
-  document.getElementById('signOutButton').addEventListener('click', async () =>{
-     if (confirm('Apakah Anda yakin ingin keluar?')) {
+ document.getElementById('signOutButton').addEventListener('click', async () => {
+  const result = await Swal.fire({
+    title: 'Apakah Anda yakin ingin keluar?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Ya, keluar',
+    cancelButtonText: 'Batal'
+  });
+
+  if (result.isConfirmed) {
     try {
       // Simpan data sebelum logout
       console.log('Saving data before sign out...');
+      
       // Logout dari Firebase
       if (typeof firebase !== 'undefined' && firebase.auth) {
         await firebase.auth().signOut();
@@ -585,7 +594,8 @@ setupEventListeners() {
       showNotification('Gagal keluar: ' + error.message, 'error');
     }
   }
-  });
+});
+
 }
 
   async addTodo() {
@@ -648,90 +658,100 @@ setupEventListeners() {
 
     todoList.innerHTML = this.todos.map(todo => this.renderTodoItem(todo)).join('');
   }
+renderTodoItem(todo) {
+  const priorityColors = {
+    high: 'bg-red-100 text-red-700 border-red-200',
+    medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+    low: 'bg-green-100 text-green-700 border-green-200'
+  };
 
-  renderTodoItem(todo) {
-    const priorityColors = {
-      high: 'bg-red-100 text-red-700 border-red-200',
-      medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      low: 'bg-green-100 text-green-700 border-green-200'
-    };
+  const categoryIcons = {
+  study: '📚',      // Belajar
+  reading: '📖',    // Reading
+  gym: '🏋️‍♂️',     // Gym
+  jogging: '🏃‍♂️',  // jogging
+  meditasi: '🧘‍♂️',  // Meditasi
+  other: '📋'       // Default lainnya
+};
 
-    const categoryIcons = {
-      study: '📚',
-      language: '🗣️',
-      skill: '🛠️',
-      other: '📋'
-    };
 
-    const priorityText = {
-      high: 'Tinggi',
-      medium: 'Sedang',
-      low: 'Rendah'
-    };
+  const priorityText = {
+    high: 'Tinggi',
+    medium: 'Sedang',
+    low: 'Rendah'
+  };
 
-    return `
-      <div class="border border-gray-200 rounded-lg p-3 sm:p-4 ${todo.completed ? 'bg-gray-50' : 'bg-white'} hover:shadow-md transition-shadow">
-        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-          <div class="flex-1">
-            <div class="flex items-start space-x-2 sm:space-x-3 mb-2">
-              <input type="checkbox" ${todo.completed ? 'checked' : ''} 
-                     onchange="studyTracker.toggleTodo(${todo.id})"
-                     class="mt-1 w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
-              <div class="flex-1">
-                <h3 class="font-medium text-gray-900 ${todo.completed ? 'line-through' : ''} text-sm sm:text-base">${todo.title}</h3>
-                <div class="flex flex-wrap items-center gap-2 mt-1 sm:mt-2">
-                  <span class="px-2 py-1 text-xs font-medium rounded-full border ${priorityColors[todo.priority]}">
-                    ${priorityText[todo.priority]}
-                  </span>
-                  <span class="text-xs text-gray-500">${this.formatStudyTime(todo.studyTime)}</span>
-                  <span class="text-sm sm:text-base">${categoryIcons[todo.category]}</span>
-                </div>
+  return `
+    <div class="border border-gray-200 rounded-lg p-3 sm:p-4 ${todo.completed ? 'bg-gray-50' : 'bg-white'} hover:shadow-md transition-shadow">
+      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+        <div class="flex-1">
+          <div class="flex items-start space-x-2 sm:space-x-3 mb-2">
+            <input type="checkbox" ${todo.completed ? 'checked' : ''} 
+                   onchange="studyTracker.toggleTodo(${todo.id})"
+                   class="mt-1 w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+            <div class="flex-1">
+              <h3 class="font-medium text-gray-900 ${todo.completed ? 'line-through' : ''} text-sm sm:text-base">${todo.title}</h3>
+              <div class="flex flex-wrap items-center gap-2 mt-1 sm:mt-2">
+                <span class="px-2 py-1 text-xs font-medium rounded-full border ${priorityColors[todo.priority]}">
+                  ${priorityText[todo.priority]}
+                </span>
+                <span class="text-xs text-gray-500">${this.formatStudyTime(todo.studyTime)}</span>
+                <span class="text-sm sm:text-base">${categoryIcons[todo.category]}</span>
               </div>
             </div>
-            
-            ${todo.subtasks.length > 0 ? `
-              <div class="space-y-1 mb-2 sm:mb-3 ml-6 sm:ml-7">
-                ${todo.subtasks.map(subtask => `
-                  <div class="flex items-center space-x-2 text-xs sm:text-sm">
-                    <input type="checkbox" ${subtask.completed ? 'checked' : ''} 
-                           onchange="studyTracker.toggleSubtask(${todo.id}, ${subtask.id})"
-                           class="w-3 h-3 text-indigo-600 rounded">
-                    <span class="${subtask.completed ? 'line-through text-gray-500' : 'text-gray-700'}">${subtask.title}</span>
-                  </div>
-                `).join('')}
-              </div>
-            ` : ''}
+          </div>
+          
+          ${todo.subtasks.length > 0 ? `
+            <div class="space-y-1 mb-2 sm:mb-3 ml-6 sm:ml-7">
+              ${todo.subtasks.map(subtask => `
+                <div class="flex items-center space-x-2 text-xs sm:text-sm">
+                  <input type="checkbox" ${subtask.completed ? 'checked' : ''} 
+                         onchange="studyTracker.toggleSubtask(${todo.id}, ${subtask.id})"
+                         class="w-3 h-3 text-indigo-600 rounded">
+                  <span class="${subtask.completed ? 'line-through text-gray-500' : 'text-gray-700'}">${subtask.title}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
 
-            <div class="mt-3 mb-2">
+          <!-- PERBAIKAN BAGIAN TOMBOL MULAI BELAJAR -->
+          <div class="mt-3 mb-2">
+            ${!todo.completed ? `
               <button onclick="studyTracker.startStudySession(${todo.id})" 
                       class="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-[1.02] active:scale-95 font-semibold shadow-lg flex items-center justify-center space-x-2">
                 <span>Mulai Belajar</span>
               </button>
-            </div>
+            ` : `
+              <div class="w-full sm:w-auto bg-gray-300 text-gray-500 px-6 py-3 rounded-lg flex items-center justify-center space-x-2 cursor-not-allowed opacity-60">
+                <span class="line-through">Target Selesai</span>
+                <span>✓</span>
+              </div>
+            `}
           </div>
-          
-          <div class="flex items-center justify-end sm:justify-start space-x-1 sm:space-x-2">
-            <button onclick="studyTracker.showSubtaskModal(${todo.id})" 
-                    class="p-1 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors text-sm sm:text-base"
-                    title="Tambah Sub-target">
-              Add Subtask
-            </button>
-            <button onclick="studyTracker.showEditTodoModal(${todo.id})" 
-                    class="p-1 sm:p-2 text-amber-600 hover:bg-amber-50 rounded-full transition-colors text-sm sm:text-base"
-                    title="Edit">
-              Edit
-            </button>
-            <button onclick="studyTracker.deleteTodo(${todo.id})" 
-                    class="p-1 sm:p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors text-sm sm:text-base"
-                    title="Hapus">
-              Delete
-            </button>
-          </div>
+          <!-- AKHIR PERBAIKAN -->
+        </div>
+        
+        <div class="flex items-center justify-end sm:justify-start space-x-1 sm:space-x-2">
+          <button onclick="studyTracker.showSubtaskModal(${todo.id})" 
+                  class="p-1 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors text-sm sm:text-base"
+                  title="Tambah Sub-target">
+            Add Subtask
+          </button>
+          <button onclick="studyTracker.showEditTodoModal(${todo.id})" 
+                  class="p-1 sm:p-2 text-amber-600 hover:bg-amber-50 rounded-full transition-colors text-sm sm:text-base"
+                  title="Edit">
+            Edit
+          </button>
+          <button onclick="studyTracker.deleteTodo(${todo.id})" 
+                  class="p-1 sm:p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors text-sm sm:text-base"
+                  title="Hapus">
+            Delete
+          </button>
         </div>
       </div>
-    `;
-  }
-
+    </div>
+  `;
+}
   async toggleTodo(id) {
     const todo = this.todos.find(t => t.id === id);
     if (todo) {
@@ -754,26 +774,35 @@ setupEventListeners() {
     }
   }
 
-  async deleteTodo(id) {
-    if (confirm('Apakah Anda yakin ingin menghapus target ini?')) {
-      // Remove from local array
-      const originalTodos = [...this.todos];
-      this.todos = this.todos.filter(t => t.id !== id);
-      
-      // Delete from Firebase
-      const deleted = await this.deleteSingleTodo(id);
-      
-      if (deleted || !this.isFirebaseReady) {
-        this.renderTodos();
-        this.updateStats();
-        this.showNotification('Target berhasil dihapus', 'info');
-      } else {
-        // Restore local array if delete failed
-        this.todos = originalTodos;
-        this.showNotification('Gagal menghapus target', 'error');
-      }
+ async deleteTodo(id) {
+  const result = await Swal.fire({
+    title: 'Apakah Anda yakin ingin menghapus target ini?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Ya, hapus',
+    cancelButtonText: 'Batal'
+  });
+
+  if (result.isConfirmed) {
+    // Remove from local array
+    const originalTodos = [...this.todos];
+    this.todos = this.todos.filter(t => t.id !== id);
+
+    // Delete from Firebase
+    const deleted = await this.deleteSingleTodo(id);
+
+    if (deleted || !this.isFirebaseReady) {
+      this.renderTodos();
+      this.updateStats();
+      this.showNotification('Target berhasil dihapus', 'info');
+    } else {
+      // Restore local array if delete failed
+      this.todos = originalTodos;
+      this.showNotification('Gagal menghapus target', 'error');
     }
   }
+}
+
 
   showEditTodoModal(todoId) {
     const todo = this.todos.find(t => t.id === todoId);
@@ -903,12 +932,21 @@ setupEventListeners() {
     }
   }
 
-startStudySession(todoId) {
+async startStudySession(todoId) {
   const todo = this.todos.find(t => t.id === todoId);
   if (!todo) return;
 
   if (this.timer.isRunning) {
-    if (confirm('Timer sedang berjalan. Apakah Anda ingin menghentikan sesi sebelumnya dan memulai yang baru?')) {
+    const result = await Swal.fire({
+      title: 'Timer sedang berjalan.',
+      text: 'Apakah Anda ingin menghentikan sesi sebelumnya dan memulai yang baru?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, mulai sesi baru',
+      cancelButtonText: 'Batal'
+    });
+
+    if (result.isConfirmed) {
       this.resetTimer();
     } else {
       return;
@@ -917,15 +955,16 @@ startStudySession(todoId) {
 
   this.timer.currentTask = todo;
   this.showNotification(`Memulai sesi belajar: ${todo.title}`, 'info');
-  
+
   // Update display
   this.updateTimerDisplay();
   this.updateTimerCircle();
-  
+
   // Enter focus mode dan langsung start timer
   this.enterFocusMode();
   this.startTimer();
 }
+
 
 // Perbaikan method exitFocusMode - otomatis hentikan timer
 exitFocusMode() {
@@ -1247,26 +1286,54 @@ skipBreak() {
 
 // Fungsi untuk mengakhiri istirahat lebih awal
 endBreak() {
-  if (confirm('Apakah Anda yakin ingin mengakhiri istirahat sekarang?')) {
-    this.breakComplete();
-  }
-}
-  setTimerMinutes(minutes) {
-    if (this.timer.isRunning) {
-      if (!confirm('Timer sedang berjalan. Apakah Anda ingin menghentikannya dan mengatur ulang?')) {
-        return;
-      }
-      this.pauseTimer();
+  Swal.fire({
+    title: 'Apakah Anda yakin ingin mengakhiri istirahat sekarang?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Ya',
+    cancelButtonText: 'Tidak'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      this.breakComplete();
     }
+  });
+}
 
-    this.timer.minutes = minutes;
-    this.timer.seconds = 0;
-    this.timer.totalSeconds = minutes * 60;
-    this.timer.isSet = true;
+  setTimerMinutes(minutes) {
+  if (this.timer.isRunning) {
+    Swal.fire({
+      title: 'Timer sedang berjalan.',
+      text: 'Apakah Anda ingin menghentikannya dan mengatur ulang?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Ya',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (!result.isConfirmed) return;
 
-    this.updateTimerDisplay();
-    this.updateTimerCircle();
+      this.pauseTimer();
+
+      this.timer.minutes = minutes;
+      this.timer.seconds = 0;
+      this.timer.totalSeconds = minutes * 60;
+      this.timer.isSet = true;
+
+      this.updateTimerDisplay();
+      this.updateTimerCircle();
+    });
+
+    return;
   }
+
+  this.timer.minutes = minutes;
+  this.timer.seconds = 0;
+  this.timer.totalSeconds = minutes * 60;
+  this.timer.isSet = true;
+
+  this.updateTimerDisplay();
+  this.updateTimerCircle();
+}
+
 
   updateTimerDisplay() {
     const display = this.formatTime(this.timer.minutes, this.timer.seconds);

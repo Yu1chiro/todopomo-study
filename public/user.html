@@ -1,256 +1,340 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Study Tracker Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="/JS/auth.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@latest/icons-sprite.svg">
+
   <style>
     .glass {
       backdrop-filter: blur(10px);
       background: rgba(255, 255, 255, 0.25);
       border: 1px solid rgba(255, 255, 255, 0.18);
     }
-    
+
     .gradient-bg {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
-    
+
     .timer-circle {
       stroke-dasharray: 314;
       stroke-dashoffset: 314;
       transition: stroke-dashoffset 1s linear;
     }
-    
+
     .pulse {
       animation: pulse 2s infinite;
     }
-    
+
     @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
     }
-    
+
     .shake {
       animation: shake 0.5s;
     }
-    
+
     @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-5px); }
-      75% { transform: translateX(5px); }
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      25% {
+        transform: translateX(-5px);
+      }
+
+      75% {
+        transform: translateX(5px);
+      }
     }
   </style>
 </head>
+
 <body class="bg-gradient-to-br from-indigo-100 via-white to-purple-100 min-h-screen">
- <!-- Navigation -->
-<nav class="glass shadow-lg sticky top-0 z-50 backdrop-blur-md">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between h-16 items-center">
-      <div class="flex items-center space-x-2">
-        <span class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Welcome</span>
-      </div>
-      <div class="flex items-center space-x-2 sm:space-x-4">
-        <a href="/statistic" class="hidden sm:block text-gray-700 hover:text-indigo-600 transition-colors duration-200 px-3 py-1 rounded-md hover:bg-indigo-50">Statistik</a>
-        <span id="userName" class="text-gray-700 truncate max-w-[100px] sm:max-w-none"></span>
-        <img id="userPhoto" class="h-8 w-8 rounded-full" src="" alt="">
-        <button id="signOutButton" class="text-gray-500 hover:text-red-500 transition-colors duration-200 px-3 py-1 rounded-md hover:bg-red-50 flex items-center">
-          <span class="hidden sm:inline">Keluar</span>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  </div>
-</nav>
-
-<main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-  <!-- Welcome Section -->
-  <div class="mb-8">
-    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Selamat Datang Kembali!</h1>
-    <p class="text-gray-600">Mari lanjutkan perjalanan belajar Anda hari ini</p>
-    <div id="userData" class="mt-4 text-left p-4 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm"></div>
-  </div>
-
-  <!-- Stats Section -->
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
-    <div class="glass rounded-xl p-4 sm:p-6 text-center backdrop-blur-sm">
-      <div class="text-xl sm:text-2xl font-bold text-indigo-600" id="totalTasks">0</div>
-      <div class="text-xs sm:text-sm text-gray-600">Total Target</div>
-    </div>
-    <div class="glass rounded-xl p-4 sm:p-6 text-center backdrop-blur-sm">
-      <div class="text-xl sm:text-2xl font-bold text-green-600" id="completedTasks">0</div>
-      <div class="text-xs sm:text-sm text-gray-600">Selesai</div>
-    </div>
-    <div class="glass rounded-xl p-4 sm:p-6 text-center backdrop-blur-sm">
-      <div class="text-xl sm:text-2xl font-bold text-purple-600" id="totalMinutes">0</div>
-      <div class="text-xs sm:text-sm text-gray-600">Menit Belajar</div>
-    </div>
-    <div class="glass rounded-xl p-4 sm:p-6 text-center backdrop-blur-sm">
-      <div class="text-xl sm:text-2xl font-bold text-orange-600" id="streak">0</div>
-      <div class="text-xs sm:text-sm text-gray-600">Hari Berturut</div>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-    <!-- Todo List Section -->
-    <div class="lg:col-span-2 space-y-4 sm:space-y-6">
-      <!-- Add Todo Form -->
-      <div class="glass rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-        <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Buat Target Baru</h2>
-        <div class="space-y-3 sm:space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Judul Target</label>
-            <input type="text" id="todoTitle" placeholder="Contoh: JLPT N4" class="w-full px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Kategori</label>
-              <select id="todoCategory" class="w-full px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
-                <option value="study">Belajar</option>
-                <option value="language">Bahasa</option>
-                <option value="skill">Keterampilan</option>
-                <option value="other">Lainnya</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Prioritas</label>
-              <select id="todoPriority" class="w-full px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
-                <option value="high">Tinggi</option>
-                <option value="medium">Sedang</option>
-                <option value="low">Rendah</option>
-              </select>
-            </div>
-          </div>
-          <button id="addTodoBtn" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-[1.02] active:scale-95 text-sm sm:text-base">
-            Tambah Target
+  <!-- Navigation -->
+  <nav class="glass shadow-lg sticky top-0 z-50 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16 items-center">
+        <div class="flex items-center space-x-2">
+          <span
+            class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Welcome</span>
+        </div>
+        <div class="flex items-center space-x-2 sm:space-x-4">
+          <a href="/statistic"
+            class="hidden sm:block text-gray-700 hover:text-indigo-600 transition-colors duration-200 px-3 py-1 rounded-md hover:bg-indigo-50">Statistik</a>
+          <span id="userName" class="text-gray-700 truncate max-w-[100px] sm:max-w-none"></span>
+          <img id="userPhoto" class="h-8 w-8 rounded-full" src="" alt="">
+          <button id="signOutButton"
+            class="text-gray-500 hover:text-red-500 transition-colors duration-200 px-3 py-1 rounded-md hover:bg-red-50 flex items-center">
+            <span class="hidden sm:inline">Keluar</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:hidden" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd"
+                d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
+                clip-rule="evenodd" />
+            </svg>
           </button>
         </div>
       </div>
+    </div>
+  </nav>
 
-      <!-- Todo List -->
-      <div class="glass rounded-xl p-4 sm:p-6 backdrop-blur-sm">
-        <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Daftar Target Anda</h2>
-        <div id="todoList" class="space-y-2 sm:space-y-3">
-          <!-- Todo items will be inserted here -->
-        </div>
+  <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <!-- Welcome Section -->
+    <div class="mb-8">
+      <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Selamat Datang Kembali!</h1>
+      <p class="text-gray-600">Mari lanjutkan perjalanan belajar Anda hari ini</p>
+      <div id="userData" class="mt-4 text-left p-4 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm"></div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-8 hidden">
+      <div class="glass rounded-xl p-4 sm:p-6 text-center backdrop-blur-sm">
+        <div class="text-xl sm:text-2xl font-bold text-indigo-600" id="totalTasks">0</div>
+        <div class="text-xs sm:text-sm text-gray-600">Total Target</div>
+      </div>
+      <div class="glass rounded-xl p-4 sm:p-6 text-center backdrop-blur-sm">
+        <div class="text-xl sm:text-2xl font-bold text-green-600" id="completedTasks">0</div>
+        <div class="text-xs sm:text-sm text-gray-600">Selesai</div>
+      </div>
+      <div class="glass rounded-xl p-4 sm:p-6 text-center backdrop-blur-sm">
+        <div class="text-xl sm:text-2xl font-bold text-purple-600" id="totalMinutes">0</div>
+        <div class="text-xs sm:text-sm text-gray-600">Menit Belajar</div>
+      </div>
+      <div class="glass rounded-xl p-4 sm:p-6 text-center backdrop-blur-sm">
+        <div class="text-xl sm:text-2xl font-bold text-orange-600" id="streak">0</div>
+        <div class="text-xs sm:text-sm text-gray-600">Hari Berturut</div>
       </div>
     </div>
 
-    <!-- Pomodoro Timer Section -->
-    <div class="space-y-4 sm:space-y-6">
-  <!-- Pomodoro Timer Section -->
-      <div class="space-y-6">
-        <!-- Timer -->
-        <div class="glass rounded-xl p-6 text-center">
-          <h2 class="text-xl font-bold text-gray-900 mb-4">Pomodoro Timer</h2>
-          
-          <!-- Timer Settings -->
-          <div class="mb-6">
-            <div class="grid grid-cols-3 gap-2 mb-4">
-              <button class="timer-preset bg-indigo-100 text-indigo-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-indigo-200 transition-colors" data-minutes="25">25 menit</button>
-              <button class="timer-preset bg-indigo-100 text-indigo-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-indigo-200 transition-colors" data-minutes="15">15 menit</button>
-              <button class="timer-preset bg-indigo-100 text-indigo-700 py-2 px-3 rounded-lg text-sm font-medium hover:bg-indigo-200 transition-colors" data-minutes="5">5 menit</button>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+      <!-- Todo List Section -->
+      <div class="lg:col-span-2 space-y-4 sm:space-y-6">
+        <!-- Add Todo Form -->
+        <div class="glass rounded-xl p-5 sm:p-6 backdrop-blur-sm">
+          <h2 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-5">Buat Target Baru</h2>
+          <div class="space-y-4 sm:space-y-5">
+            <div>
+              <label class="block text-base sm:text-lg font-medium text-gray-700 mb-2 sm:mb-3">Judul Target</label>
+              <input type="text" id="todoTitle" placeholder="Contoh: JLPT N4"
+                class="w-full px-4 py-3 sm:px-5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base sm:text-lg">
             </div>
-            <div class="flex items-center justify-center space-x-2">
-              <label class="text-sm font-medium text-gray-700">Custom:</label>
-              <input type="number" id="customMinutes" min="1" max="120" value="25" class="w-16 px-2 py-1 border border-gray-300 rounded text-center">
-              <span class="text-sm text-gray-600">menit</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+              <div>
+                <label class="block text-base sm:text-lg font-medium text-gray-700 mb-2 sm:mb-3">Kategori</label>
+                <select id="todoCategory"
+                  class="w-full px-4 py-3 sm:px-5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base sm:text-lg">
+                  <option value="study">Belajar</option>
+                  <option value="reading">Reading</option>
+                  <option value="gym">Gym</option>
+                  <option value="jogging">jogging</option>
+                  <option value="meditasi">Meditasi</option>
+                  <option value="other">Lainnya</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-base sm:text-lg font-medium text-gray-700 mb-2 sm:mb-3">Prioritas</label>
+                <select id="todoPriority"
+                  class="w-full px-4 py-3 sm:px-5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-base sm:text-lg">
+                  <option value="high">Tinggi</option>
+                  <option value="medium">Sedang</option>
+                  <option value="low">Rendah</option>
+                </select>
+              </div>
             </div>
+            <button id="addTodoBtn"
+              class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-5 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 transform hover:scale-[1.02] active:scale-95 text-base sm:text-lg font-medium">
+              Tambah Target
+            </button>
           </div>
+        </div>
 
-          <!-- Timer Display -->
-          <div class="relative mb-6">
-            <svg class="w-48 h-48 mx-auto transform -rotate-90">
-              <circle cx="96" cy="96" r="50" stroke="#e5e7eb" stroke-width="8" fill="none"></circle>
-              <circle id="timerCircle" cx="96" cy="96" r="50" stroke="url(#gradient)" stroke-width="8" fill="none" class="timer-circle"></circle>
-              <defs>
-                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" style="stop-color:#667eea"/>
-                  <stop offset="100%" style="stop-color:#764ba2"/>
-                </linearGradient>
-              </defs>
-            </svg>
-            <div class="absolute inset-0 flex items-center justify-center">
-              <div class="text-center">
-                <div id="timerDisplay" class="text-4xl font-bold text-gray-900">25:00</div>
-                <div id="timerStatus" class="text-sm text-gray-600 mt-1">Siap Memulai</div>
+        <!-- Todo List -->
+        <div class="glass rounded-xl p-4 sm:p-6 backdrop-blur-sm">
+          <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Daftar Target Anda</h2>
+          <div id="todoList" class="space-y-2 sm:space-y-3">
+            <!-- Todo items will be inserted here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Pomodoro Timer Section -->
+      <div class="space-y-4 sm:space-y-6">
+        <!-- Pomodoro Timer Section -->
+        <div class="space-y-6">
+          <div class="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 p-4 flex items-center justify-center">
+            <div class="w-full max-w-md">
+              <!-- Timer -->
+              <div class="bg-white rounded-2xl p-6 text-center shadow-xl shadow-indigo-100">
+                <h2 class="text-2xl font-bold text-gray-900 mb-5">Pomodoro Timer</h2>
+
+                <!-- Timer Settings -->
+                <div class="mb-6">
+                  <div class="grid grid-cols-3 gap-3 mb-5">
+                    <button
+                      class="timer-preset bg-indigo-100 text-indigo-700 py-3 px-2 rounded-xl text-sm font-medium hover:bg-indigo-200 active:bg-indigo-300 transition-colors"
+                      data-minutes="25">25m</button>
+                    <button
+                      class="timer-preset bg-indigo-100 text-indigo-700 py-3 px-2 rounded-xl text-sm font-medium hover:bg-indigo-200 active:bg-indigo-300 transition-colors"
+                      data-minutes="15">15m</button>
+                    <button
+                      class="timer-preset bg-indigo-100 text-indigo-700 py-3 px-2 rounded-xl text-sm font-medium hover:bg-indigo-200 active:bg-indigo-300 transition-colors"
+                      data-minutes="5">5m</button>
+                  </div>
+                  <div class="flex items-center justify-center space-x-3">
+                    <label class="text-sm font-medium text-gray-700">Custom:</label>
+                    <input type="number" id="customMinutes" min="1" max="120" value="25"
+                      class="w-16 px-3 py-2 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <span class="text-sm text-gray-600">menit</span>
+                  </div>
+                </div>
+
+                <!-- Timer Display - Diperbaiki lingkaran progressnya -->
+                <div class="relative mb-8">
+                  <svg class="w-64 h-64 mx-auto transform -rotate-90" viewBox="0 0 256 256">
+                    <!-- Lingkaran background -->
+                    <circle cx="128" cy="128" r="90" stroke="#e5e7eb" stroke-width="12" fill="none" />
+
+                    <!-- Lingkaran progress -->
+                    <circle id="timerCircle" cx="128" cy="128" r="90" stroke="url(#gradient)" stroke-width="12"
+                      stroke-linecap="round" fill="none" stroke-dasharray="565.48" stroke-dashoffset="0" />
+
+                    <defs>
+                      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#6366f1" />
+                        <stop offset="100%" style="stop-color:#a855f7" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="text-center">
+                      <div id="timerDisplay" class="text-5xl font-bold text-gray-900">25:00</div>
+                      <div id="timerStatus" class="text-sm text-gray-600 mt-2">Siap Memulai</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Timer Controls -->
+                <div class="flex justify-center space-x-4 mb-4">
+
+                  <button id="resetBtn"
+                    class="bg-red-500 hover:bg-red-700 text-white border border-gray-300 px-6 py-3 rounded-xl font-medium hover:bg-gray-50 active:bg-gray-100 transition-colors duration-200">
+                    Reset
+                  </button>
+                </div>
+
+                <!-- Current Task -->
+                <div id="currentTask" class="bg-indigo-100 rounded-xl p-3 text-sm text-indigo-800 mt-4 hidden">
+                  <div class="flex items-center justify-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span class="font-medium">Sedang fokus pada:</span>
+                  </div>
+                  <div id="currentTaskName" class="font-semibold truncate mt-1"></div>
+                </div>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+  </main>
 
-          <!-- Timer Controls -->
-          <div class="flex justify-center space-x-3 mb-4">
-            <button id="startPauseBtn" class="hidden bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors duration-200 flex items-center space-x-2">
-              <span id="startPauseText">Mulai</span>
-            </button>
-            <button id="resetBtn" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors duration-200">Reset</button>
+  <!-- Subtask Modal -->
+  <div id="subtaskModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="glass rounded-xl p-4 sm:p-6 max-w-md w-full backdrop-blur-sm">
+      <h3 class="text-lg font-bold text-amber-300 mb-3 sm:mb-4">Add Sub Task</h3>
+      <div class="space-y-3 sm:space-y-4">
+        <input type="text" id="subtaskTitle" placeholder="Contoh: Tryout Grammar"
+          class="w-full px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
+        <div class="flex justify-end space-x-2 sm:space-x-3">
+          <button id="cancelSubtask"
+            class="px-3 py-1 sm:px-4 sm:py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm sm:text-base">Batal</button>
+          <button id="addSubtask"
+            class="px-3 py-1 sm:px-4 sm:py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors text-sm sm:text-base">Tambah</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Todo Modal -->
+  <div id="editTodoModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="glass rounded-xl p-4 sm:p-6 max-w-md w-full backdrop-blur-sm">
+      <h3 class="text-lg font-bold text-gray-900 mb-3 sm:mb-4">Edit Target</h3>
+      <div class="space-y-3 sm:space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Judul Target</label>
+          <input type="text" id="editTodoTitle"
+            class="w-full px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Kategori</label>
+            <select id="editTodoCategory"
+              class="w-full px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
+              <option value="study">Belajar</option>
+              <option value="language">Bahasa</option>
+              <option value="skill">Keterampilan</option>
+              <option value="other">Lainnya</option>
+            </select>
           </div>
-        <!-- Current Task -->
-        <div id="currentTask" class="bg-indigo-50 rounded-lg p-2 sm:p-3 text-xs sm:text-sm text-indigo-700 hidden">
-          <span class="font-medium">Sedang fokus pada:</span>
-          <div id="currentTaskName" class="font-semibold truncate"></div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Prioritas</label>
+            <select id="editTodoPriority"
+              class="w-full px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
+              <option value="high">Tinggi</option>
+              <option value="medium">Sedang</option>
+              <option value="low">Rendah</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex justify-end space-x-2 sm:space-x-3">
+          <button id="cancelEditTodo"
+            class="px-3 py-1 sm:px-4 sm:py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm sm:text-base">Batal</button>
+          <button id="saveEditTodo"
+            class="px-3 py-1 sm:px-4 sm:py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors text-sm sm:text-base">Simpan</button>
         </div>
       </div>
     </div>
   </div>
-</main>
+  <!-- Bottom Navigation Bar -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 md:hidden">
+    <div class="flex justify-around">
+      <!-- Item Home -->
+      <a href="#" class="flex flex-col items-center py-2 px-4 text-blue-500">
+        <i class="fas  fa-home text-2xl"></i>
+        <span class="text-xs mt-1">Home</span>
+      </a>
 
-<!-- Subtask Modal -->
-<div id="subtaskModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
-  <div class="glass rounded-xl p-4 sm:p-6 max-w-md w-full backdrop-blur-sm">
-    <h3 class="text-lg font-bold text-amber-300 mb-3 sm:mb-4">Add Sub Task</h3>
-    <div class="space-y-3 sm:space-y-4">
-      <input type="text" id="subtaskTitle" placeholder="Contoh: Tryout Grammar" class="w-full px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
-      <div class="flex justify-end space-x-2 sm:space-x-3">
-        <button id="cancelSubtask" class="px-3 py-1 sm:px-4 sm:py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm sm:text-base">Batal</button>
-        <button id="addSubtask" class="px-3 py-1 sm:px-4 sm:py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors text-sm sm:text-base">Tambah</button>
-      </div>
+      <!-- Item Statistik -->
+      <a href="/statistic" class="flex flex-col items-center py-2 px-4 text-gray-500 hover:text-blue-500">
+        <i class="fas  fa-chart-bar text-2xl"></i>
+        <span class="text-xs mt-1">Statistik</span>
+      </a>
     </div>
-  </div>
-</div>
-
-<!-- Edit Todo Modal -->
-<div id="editTodoModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
-  <div class="glass rounded-xl p-4 sm:p-6 max-w-md w-full backdrop-blur-sm">
-    <h3 class="text-lg font-bold text-gray-900 mb-3 sm:mb-4">Edit Target</h3>
-    <div class="space-y-3 sm:space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Judul Target</label>
-        <input type="text" id="editTodoTitle" class="w-full px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Kategori</label>
-          <select id="editTodoCategory" class="w-full px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
-            <option value="study">Belajar</option>
-            <option value="language">Bahasa</option>
-            <option value="skill">Keterampilan</option>
-            <option value="other">Lainnya</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">Prioritas</label>
-          <select id="editTodoPriority" class="w-full px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
-            <option value="high">Tinggi</option>
-            <option value="medium">Sedang</option>
-            <option value="low">Rendah</option>
-          </select>
-        </div>
-      </div>
-      <div class="flex justify-end space-x-2 sm:space-x-3">
-        <button id="cancelEditTodo" class="px-3 py-1 sm:px-4 sm:py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm sm:text-base">Batal</button>
-        <button id="saveEditTodo" class="px-3 py-1 sm:px-4 sm:py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors text-sm sm:text-base">Simpan</button>
-      </div>
-    </div>
-  </div>
-</div>
+  </nav>
   <script src="/JS/main.js"></script>
   <script src="/JS/statistic.js"></script>
 
@@ -260,21 +344,21 @@
       try {
         const response = await fetch('/userData');
         if (!response.ok) throw new Error('Failed to fetch user data');
-        
+
         const userData = await response.json();
-        
+
         document.getElementById('userName').textContent = userData.name || 'User';
         if (userData.profile) {
           document.getElementById('userPhoto').src = userData.profile;
         }
-        
+
         // Display user data
         const userDataDiv = document.getElementById('userData');
         userDataDiv.innerHTML = `
-          <p><strong>Name:</strong> ${userData.name || 'N/A'}</p>
-          <p><strong>Email:</strong> ${userData.email || 'N/A'}</p>
-          <p><strong>Last Login:</strong> ${new Date(userData.lastLogin).toLocaleString() || 'N/A'}</p>
-        `;
+  <p><i class="fas fa-user fa-sm mr-2 text-gray-600"></i><strong>Name:</strong> ${userData.name || 'N/A'}</p>
+  <p><i class="fas fa-clock fa-sm mr-2 text-gray-600"></i><strong>Last Login:</strong> ${new Date(userData.lastLogin).toLocaleString() || 'N/A'}</p>
+`;
+
       } catch (error) {
         console.error('Error:', error);
       }
@@ -283,6 +367,8 @@
 
     });
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 </body>
+
 </html>
