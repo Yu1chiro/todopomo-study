@@ -1,4 +1,4 @@
-    class StudyTracker {
+   class StudyTracker {
   constructor() {
     this.todos = [];
     this.currentUser = { name: 'Pengguna' };
@@ -15,11 +15,20 @@
       totalSeconds: 25 * 60,
       isSet: true
     };
+    // TAMBAHKAN INI untuk break timer
+  this.breakTimer = {
+    minutes: 0,
+    seconds: 0,
+    isRunning: false,
+    interval: null,
+    totalSeconds: 0
+  };
     this.progressData = [];
     this.audioElements = {
-      rain: null,
-      complete: null
-    };
+    rain: null,
+    complete: null,
+    break: null  // TAMBAHKAN INI yang hilang
+  };
     this.focusMode = {
       active: false,
       overlay: null
@@ -358,24 +367,116 @@
   }
 
   // Initialize audio elements
-  initializeAudio() {
-    // Rain audio
-    this.audioElements.rain = new Audio();
-    this.audioElements.rain.loop = true;
-    this.audioElements.rain.volume = 0.3;
-    
-    // Complete audio
-    this.audioElements.complete = new Audio();
-    this.audioElements.complete.volume = 0.5;
-    
-    // Set audio sources if available
-    try {
-      this.audioElements.rain.src = '/audio/lofi.mp3';
-      this.audioElements.complete.src = '/audio/yasumi.mp3';
-    } catch (error) {
-      console.warn('Audio files not found, continuing without audio');
-    }
+ initializeAudio() {
+  // Rain audio
+  this.audioElements.rain = new Audio();
+  this.audioElements.rain.loop = true;
+  this.audioElements.rain.volume = 0.3;
+  
+  // Complete audio
+  this.audioElements.complete = new Audio();
+  this.audioElements.complete.volume = 0.5;
+  
+  // Break audio - PERBAIKAN: Tambahkan inisialisasi yang hilang
+  this.audioElements.break = new Audio();
+  this.audioElements.break.loop = true;
+  this.audioElements.break.volume = 0.4;
+  
+  // Set audio sources if available
+  try {
+    this.audioElements.rain.src = '/audio/lofi.mp3';
+    this.audioElements.complete.src = '/audio/yasumi.mp3';
+    this.audioElements.break.src = '/audio/break.mp3';
+  } catch (error) {
+    console.warn('Audio files not found, continuing without audio');
   }
+}
+// Fungsi untuk membuat modal istirahat
+createBreakModal() {
+  const modal = document.createElement('div');
+  modal.id = 'breakModal';
+  modal.className = 'fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm z-50 hidden items-center justify-center transition-all duration-500 ease-in-out';
+  modal.innerHTML = `
+    <div class="bg-white rounded-3xl p-8 text-center shadow-2xl max-w-md mx-4">
+      <div class="mb-6">
+        <div class="text-6xl mb-4">☕</div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Sesi Belajar Selesai!</h2>
+        <p class="text-gray-600">Apakah Anda ingin istirahat sejenak?</p>
+      </div>
+      
+      <div class="space-y-4 mb-6">
+        <button onclick="studyTracker.startBreak(3)" 
+                class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 font-semibold shadow-lg">
+          Istirahat 3 Menit ⏰
+        </button>
+        <button onclick="studyTracker.startBreak(5)" 
+                class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 font-semibold shadow-lg">
+          Istirahat 5 Menit ⏰
+        </button>
+        <button onclick="studyTracker.startBreak(10)" 
+                class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 transform hover:scale-105 font-semibold shadow-lg">
+          Istirahat 10 Menit ⏰
+        </button>
+      </div>
+      
+      <button onclick="studyTracker.skipBreak()" 
+              class="text-gray-500 hover:text-gray-700 underline text-sm transition-colors">
+        Lewati Istirahat
+      </button>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  return modal;
+}
+
+// Fungsi untuk membuat modal break timer
+createBreakTimerModal() {
+  const modal = document.createElement('div');
+  modal.id = 'breakTimerModal';
+  modal.className = 'fixed inset-0 bg-green-900 bg-opacity-60 backdrop-blur-sm z-50 hidden items-center justify-center transition-all duration-500 ease-in-out';
+  modal.innerHTML = `
+    <div class="bg-white bg-opacity-95 backdrop-blur-md rounded-3xl p-8 text-center shadow-2xl">
+      <div class="mb-6">
+        <div class="text-4xl mb-4">🌿</div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Waktu Istirahat</h2>
+        <p class="text-gray-600">Nikmati waktu istirahat Anda</p>
+      </div>
+      
+      <!-- Break Timer Circle -->
+      <div class="relative w-48 h-48 mx-auto mb-6">
+        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" stroke="#10B981" stroke-width="2" fill="none" opacity="0.3"/>
+          <circle cx="60" cy="60" r="50" stroke="#10B981" stroke-width="4" fill="none" 
+                  stroke-linecap="round" id="breakTimerCircle"
+                  style="stroke-dasharray: 314; stroke-dashoffset: 314; transition: stroke-dashoffset 1s ease-in-out;"/>
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="text-center">
+            <div class="text-4xl font-mono font-bold text-gray-800" id="breakTimerDisplay">05:00</div>
+            <div class="text-sm text-gray-600 mt-1">Istirahat</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Control Button -->
+      <div class="flex justify-center">
+        <button onclick="studyTracker.endBreak()" 
+                class="bg-red-500 bg-opacity-80 hover:bg-opacity-100 text-white px-8 py-3 rounded-full transition-all duration-200 font-semibold">
+          Akhiri Istirahat
+        </button>
+      </div>
+      
+      <!-- Audio indicator -->
+      <div class="mt-4 text-gray-500">
+        <span class="text-sm">🎵 Musik relaksasi aktif</span>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  return modal;
+}
 
   // Create focus mode overlay
   createFocusOverlay() {
@@ -613,17 +714,17 @@ setupEventListeners() {
             <button onclick="studyTracker.showSubtaskModal(${todo.id})" 
                     class="p-1 sm:p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors text-sm sm:text-base"
                     title="Tambah Sub-target">
-              ➕
+              Add Subtask
             </button>
             <button onclick="studyTracker.showEditTodoModal(${todo.id})" 
-                    class="p-1 sm:p-2 text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors text-sm sm:text-base"
+                    class="p-1 sm:p-2 text-amber-600 hover:bg-amber-50 rounded-full transition-colors text-sm sm:text-base"
                     title="Edit">
-              ✏️
+              Edit
             </button>
             <button onclick="studyTracker.deleteTodo(${todo.id})" 
                     class="p-1 sm:p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors text-sm sm:text-base"
                     title="Hapus">
-              🗑️
+              Delete
             </button>
           </div>
         </div>
@@ -938,41 +1039,218 @@ toggleTimer() {
   }
 
   async timerComplete() {
-    this.pauseTimer();
-    
-    // Play completion sound
-    if (this.audioElements.complete) {
-      this.audioElements.complete.play().catch(console.warn);
+  this.pauseTimer();
+  
+  // Play completion sound
+  if (this.audioElements.complete) {
+    this.audioElements.complete.play().catch(console.warn);
+  }
+  
+  // Update task study time if there's a current task
+  if (this.timer.currentTask) {
+    const task = this.todos.find(t => t.id === this.timer.currentTask.id);
+    if (task) {
+      task.studyTime += this.timer.totalSeconds / 60; // Convert to minutes
+      await this.saveSingleTodo(task);
     }
+  }
+  
+  // Update progress data
+  await this.updateTodayProgress();
+  
+  // Show completion notification
+  this.showNotification('Sesi belajar selesai! 🎉', 'success');
+  
+  // Exit focus mode
+  if (this.focusMode.active) {
+    this.exitFocusMode();
+  }
+  
+  // Reset timer
+  this.resetTimer();
+  
+  // Refresh display
+  this.renderTodos();
+  this.updateStats();
+  
+  // TAMBAHKAN INI: Tampilkan modal istirahat
+  this.showBreakModal();
+}
+showBreakModal() {
+  // Create modal if not exists
+  let modal = document.getElementById('breakModal');
+  if (!modal) {
+    modal = this.createBreakModal();
+  }
+  
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+// Fungsi untuk menyembunyikan modal istirahat
+hideBreakModal() {
+  const modal = document.getElementById('breakModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+}
+
+// Fungsi untuk memulai istirahat
+startBreak(minutes) {
+  this.hideBreakModal();
+  
+  // Set break timer
+  this.breakTimer.minutes = minutes;
+  this.breakTimer.seconds = 0;
+  this.breakTimer.totalSeconds = minutes * 60;
+  this.breakTimer.isRunning = true;
+  
+  // Create and show break timer modal
+  let breakTimerModal = document.getElementById('breakTimerModal');
+  if (!breakTimerModal) {
+    breakTimerModal = this.createBreakTimerModal();
+  }
+  
+  // Update display and show modal
+  this.updateBreakTimerDisplay();
+  this.updateBreakTimerCircle();
+  breakTimerModal.classList.remove('hidden');
+  breakTimerModal.classList.add('flex');
+  
+  // PERBAIKAN: Start break audio dengan error handling dan logging
+  console.log('Mencoba memainkan audio break...', this.audioElements.break);
+  if (this.audioElements.break) {
+    console.log('Audio break source:', this.audioElements.break.src);
     
-    // Update task study time if there's a current task
-    if (this.timer.currentTask) {
-      const task = this.todos.find(t => t.id === this.timer.currentTask.id);
-      if (task) {
-        task.studyTime += this.timer.totalSeconds / 60; // Convert to minutes
-        await this.saveSingleTodo(task);
-      }
+    // Reset audio ke awal
+    this.audioElements.break.currentTime = 0;
+    
+    // Coba play dengan promise handling
+    const playPromise = this.audioElements.break.play();
+    
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          console.log('Audio break berhasil dimainkan');
+        })
+        .catch(error => {
+          console.error('Gagal memainkan audio break:', error);
+          // Coba alternatif: user interaction required
+          this.showNotification('Klik untuk memulai audio istirahat 🎵', 'info');
+        });
     }
-    
-    // Update progress data
-    await this.updateTodayProgress();
-    
-    // Show completion notification
-    this.showNotification('Sesi belajar selesai! 🎉', 'success');
-    
-    // Exit focus mode
-    if (this.focusMode.active) {
-      this.exitFocusMode();
+  } else {
+    console.error('Audio break element tidak tersedia');
+  }
+  
+  // Start break timer interval
+  this.breakTimer.interval = setInterval(() => {
+    this.updateBreakTimer();
+  }, 1000);
+  
+  this.showNotification(`Memulai istirahat ${minutes} menit 🌿`, 'info');
+}
+
+// PERBAIKAN 4: Tambahkan method untuk handle user interaction audio
+enableBreakAudio() {
+  if (this.audioElements.break && this.breakTimer.isRunning) {
+    this.audioElements.break.play()
+      .then(() => {
+        console.log('Audio break berhasil dimainkan setelah user interaction');
+      })
+      .catch(error => {
+        console.error('Masih gagal memainkan audio break:', error);
+      });
+  }
+}
+
+// Fungsi untuk update break timer
+updateBreakTimer() {
+  if (this.breakTimer.seconds === 0) {
+    if (this.breakTimer.minutes === 0) {
+      // Break timer completed
+      this.breakComplete();
+      return;
     }
-    
-    // Reset timer
-    this.resetTimer();
-    
-    // Refresh display
-    this.renderTodos();
-    this.updateStats();
+    this.breakTimer.minutes--;
+    this.breakTimer.seconds = 59;
+  } else {
+    this.breakTimer.seconds--;
   }
 
+  this.updateBreakTimerDisplay();
+  this.updateBreakTimerCircle();
+}
+
+// Fungsi untuk update display break timer
+updateBreakTimerDisplay() {
+  const display = this.formatTime(this.breakTimer.minutes, this.breakTimer.seconds);
+  const displayElement = document.getElementById('breakTimerDisplay');
+  if (displayElement) {
+    displayElement.textContent = display;
+  }
+}
+
+// Fungsi untuk update circle break timer
+updateBreakTimerCircle() {
+  const circle = document.getElementById('breakTimerCircle');
+  if (circle) {
+    const currentSeconds = this.breakTimer.minutes * 60 + this.breakTimer.seconds;
+    const progress = currentSeconds / this.breakTimer.totalSeconds;
+    const dashOffset = 314 * (1 - progress);
+    circle.style.strokeDashoffset = dashOffset;
+  }
+}
+
+// Fungsi ketika break selesai
+// Fungsi ketika break selesai
+breakComplete() {
+  // Clear interval
+  if (this.breakTimer.interval) {
+    clearInterval(this.breakTimer.interval);
+    this.breakTimer.interval = null;
+  }
+  
+  this.breakTimer.isRunning = false;
+  
+  // Stop break audio
+  if (this.audioElements.break) {
+    this.audioElements.break.pause();
+    this.audioElements.break.currentTime = 0;
+  }
+  
+  // TAMBAHAN: Play yasumi.mp3 setelah istirahat berakhir
+  if (this.audioElements.complete) {
+    this.audioElements.complete.play().catch(console.warn);
+  }
+  
+  // Hide break timer modal
+  const breakTimerModal = document.getElementById('breakTimerModal');
+  if (breakTimerModal) {
+    breakTimerModal.classList.add('hidden');
+    breakTimerModal.classList.remove('flex');
+  }
+  
+  // Reset break timer
+  this.breakTimer.minutes = 0;
+  this.breakTimer.seconds = 0;
+  this.breakTimer.totalSeconds = 0;
+  
+  this.showNotification('Waktu istirahat selesai! Siap untuk sesi berikutnya? 💪', 'success');
+}
+// Fungsi untuk melewati istirahat
+skipBreak() {
+  this.hideBreakModal();
+  this.showNotification('Istirahat dilewati. Tetap semangat! 💪', 'info');
+}
+
+// Fungsi untuk mengakhiri istirahat lebih awal
+endBreak() {
+  if (confirm('Apakah Anda yakin ingin mengakhiri istirahat sekarang?')) {
+    this.breakComplete();
+  }
+}
   setTimerMinutes(minutes) {
     if (this.timer.isRunning) {
       if (!confirm('Timer sedang berjalan. Apakah Anda ingin menghentikannya dan mengatur ulang?')) {
