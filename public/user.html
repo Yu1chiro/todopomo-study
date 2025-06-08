@@ -258,14 +258,14 @@
     document.addEventListener('DOMContentLoaded', async () => {
       // Fetch user data
       try {
-        const response = await fetch('/user');
+        const response = await fetch('/userData');
         if (!response.ok) throw new Error('Failed to fetch user data');
         
         const userData = await response.json();
         
         document.getElementById('userName').textContent = userData.name || 'User';
-        if (userData.picture) {
-          document.getElementById('userPhoto').src = userData.picture;
+        if (userData.profile) {
+          document.getElementById('userPhoto').src = userData.profile;
         }
         
         // Display user data

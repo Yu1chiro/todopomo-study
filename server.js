@@ -181,13 +181,15 @@ async function checkUserSession(req, res, next) {
 // Contoh penggunaan untuk mengakses data user
 app.get('/userData', checkUserSession, async (req, res) => {
   try {
-    const userRef = admin.database().ref(`users/${req.user.uid}`);
+    const userRef = admin.database().ref(`users/${req.user.uid}/profile`);
     const snapshot = await userRef.once('value');
-    const userData = snapshot.val();
-    
+    const profile = snapshot.val();
+
     res.json({
-      profile: userData.profile || userData.session, // Tergantung struktur yang dipilih
-      data: userData.data || {}
+      name: profile.name || 'User',
+      email: profile.email || '',
+      lastLogin: profile.lastLogin || '',
+      profile: profile.picture || ''
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch user data' });
